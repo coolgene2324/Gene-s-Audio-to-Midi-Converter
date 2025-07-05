@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube to MIDI Converter</title>
+    <style>
+        /* Import Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* CSS Variables for easy theming */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --error-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --bg-color: #f4f7f6;
+            --progress-bg: #e0e0e0;
+            --progress-fill: var(--primary-gradient);
+        }
+        
+        html[data-theme='dark'] {
+            --glass-bg: rgba(30, 30, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --bg-color: #121212;
+            --progress-bg: #333;
+            --progress-fill: linear-gradient(135deg, #4d5c9e 0%, #5d387c 100%);
+        }
+
+        /* Global styles */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        * { box-sizing: border-box; }
+
+        .midi-converter {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Glass-morphism cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 12px 0;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        /* Section headers */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+
+        /* Header card */
+        .header-card {
+            background: var(--primary-gradient);
+            color: white;
+            text-align: center;
+            padding: 40px;
+            margin-top: 0; /* Adjust margin for top card */
+        }
+        .header-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 12px 0; }
+        .header-card p { font-size: 16px; opacity: 0.95; margin: 0; }
+
+        /* Input styling */
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.05);
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        input:focus, textarea:focus {
+            border-color: #667eea;
+            background: rgba(0,0,0,0.02);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+
+        /* Button styling */
+        button {
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+            text-transform: none;
+            cursor: pointer;
+            border: none;
+        }
+        button.success {
+            background: var(--success-gradient);
+            color: white;
+            box-shadow: 0 4px 16px rgba(17, 153, 142, 0.3);
+        }
+        button.success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        button.primary { /* For "Open Output Folder" */
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+            margin-top: 20px;
+        }
+        button.primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+
+        /* File upload */
+        .file-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .file-upload-area span { color: #667eea; font-weight: 500; }
+        
+        /* Label styling */
+        label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        /* Layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        
+        /* Log container */
+        .log-container {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        html[data-theme='dark'] .log-container {
+             background: rgba(0, 0, 0, 0.2);
+             border-color: rgba(255, 255, 255, 0.1);
+        }
+        .log-entry { padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; }
+        .log-entry .timestamp { opacity: 0.6; font-size: 11px; min-width: 60px; }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+
+        /* Current file display */
+        .current-file {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: center;
+            min-height: 57px;
+        }
+
+        #download-links {
+            text-align: center;
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            padding: 24px;
+            margin: 12px 0;
+            text-align: center;
+        }
+        .progress-bar-outer {
+            width: 100%;
+            background-color: var(--progress-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+            margin-top: 15px;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            background: var(--progress-fill);
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .text-center { text-align: center; }
+        .mt-2 { margin-top: 8px; }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="midi-converter">
+    <div class="glass-card header-card">
+        <h1>🎼 YouTube to MIDI Converter</h1>
+        <p>A local, web-based tool to transform audio into MIDI files.</p>
+    </div>
+
+    <form id="conversion-form">
+        <div class="glass-card">
+            <h2 class="section-title">Input Sources</h2>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="youtube_urls">YouTube URLs (one per line)</label>
+                    <textarea id="youtube_urls" name="youtube_urls" placeholder="https://www.youtube.com/watch?v=..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="audio_files">Or Upload Audio Files (MP3, WAV, FLAC)</label>
+                    <div class="file-upload-area" id="drop-zone">
+                        <input type="file" id="audio_files" name="audio_files" multiple hidden>
+                        <span id="file-upload-text">Click to upload or drag files here</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2 class="section-title">Settings</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="custom_name">Custom Name (optional)</label>
+                    <input type="text" id="custom_name" name="custom_name" placeholder="My Song">
+                </div>
+                <div class="form-group">
+                    <label for="cookie_file">Cookie File (for age-restricted videos)</label>
+                     <input type="file" id="cookie_file" name="cookie_file">
+                </div>
+                 <div class="form-group">
+                    <label for="chunk_duration">Chunk Duration (s)</label>
+                    <input type="number" id="chunk_duration" name="chunk_duration" value="10.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="max_duration">Max Note Duration (s)</label>
+                    <input type="number" id="max_duration" name="max_duration" value="0.2" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="start_time">Start Time (s)</label>
+                    <input type="number" id="start_time" name="start_time" value="0.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="end_time">End Time (s, 0=end)</label>
+                    <input type="number" id="end_time" name="end_time" value="0.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="onset_threshold">Onset Threshold (0-1)</label>
+                    <input type="number" id="onset_threshold" name="onset_threshold" value="0.5" step="0.01" min="0" max="1">
+                </div>
+                <div class="form-group">
+                    <label for="offset_threshold">Offset Threshold (0-1)</label>
+                    <input type="number" id="offset_threshold" name="offset_threshold" value="0.5" step="0.01" min="0" max="1">
+                </div>
+                <div class="form-group">
+                    <label for="velocity_threshold">Velocity Threshold (0-1)</label>
+                    <input type="number" id="velocity_threshold" name="velocity_threshold" value="0.5" step="0.01" min="0" max="1">
+                </div>
+            </div>
+             <div class="form-group">
+                <input type="checkbox" id="zip_files" name="zip_files" checked>
+                <label for="zip_files">Zip multiple files</label>
+            </div>
+            <div class="form-group">
+                <input type="checkbox" id="keep_mp3" name="keep_mp3">
+                <label for="keep_mp3">Keep downloaded MP3s</label>
+            </div>
+        </div>
+
+        <button type="submit" id="start-button" class="success full-width">🚀 Start Conversion</button>
+    </form>
+
+    <div class="progress-container glass-card" id="progress-card" style="display: none;">
+        <h2 class="section-title">Overall Progress</h2>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progress-bar" style="width: 0%;"></div>
+        </div>
+        <p id="progress-text" class="text-center mt-2">0%</p>
+    </div>
+
+    <div class="glass-card">
+         <h2 class="section-title">Status</h2>
+         <div id="status-display" class="current-file">Ready to convert...</div>
+         <div id="download-links">
+             <!-- This will be replaced by an "Open Output Folder" button -->
+         </div>
+         <div id="error-message" style="color: var(--error-gradient); font-weight: 600; text-align: center; margin-top: 10px; display: none;"></div>
+    </div>
+
+    <div class="glass-card">
+        <h2 class="section-title">Processing Log</h2>
+        <div id="log-container" class="log-container"></div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('conversion-form');
+        const startButton = document.getElementById('start-button');
+        const logContainer = document.getElementById('log-container');
+        const statusDisplay = document.getElementById('status-display');
+        const downloadLinksContainer = document.getElementById('download-links');
+        const fileUploadArea = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('audio_files');
+        const fileUploadText = document.getElementById('file-upload-text');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressCard = document.getElementById('progress-card');
+        const errorMessageDisplay = document.getElementById('error-message');
+
+
+        // Dark mode detection
+        const matcher = window.matchMedia('(prefers-color-scheme: dark)');
+        const docEl = document.documentElement;
+        function applyTheme() {
+            docEl.setAttribute('data-theme', matcher.matches ? 'dark' : 'light');
+        }
+        matcher.addEventListener('change', applyTheme);
+        applyTheme();
+
+        // File upload UI
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.style.borderColor = '#764ba2'; });
+        fileUploadArea.addEventListener('dragleave', () => fileUploadArea.style.borderColor = '#667eea');
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileInput.files = e.dataTransfer.files;
+            updateFileList();
+        });
+        fileInput.addEventListener('change', updateFileList);
+
+        function updateFileList() {
+            if (fileInput.files.length > 0) {
+                fileUploadText.textContent = `${fileInput.files.length} file(s) selected`;
+            } else {
+                fileUploadText.textContent = 'Click to upload or drag files here';
+            }
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            startButton.disabled = true;
+            startButton.textContent = 'Processing...';
+            logContainer.innerHTML = ''; // Clear logs on new submission
+            downloadLinksContainer.innerHTML = ''; // Clear previous links/buttons
+            statusDisplay.textContent = 'Starting...';
+            errorMessageDisplay.style.display = 'none'; // Hide previous errors
+            errorMessageDisplay.textContent = ''; // Clear error message text
+            
+            // Show and reset progress bar
+            progressCard.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            updateStatus("Starting conversion...", "Processing"); // Set initial status
+
+            const formData = new FormData(form);
+            
+            fetch('/convert', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                function push() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            console.log('Stream complete');
+                            startButton.disabled = false;
+                            startButton.textContent = '🚀 Start Conversion';
+                            // Ensure final status update on completion, if not already set by 'result' or 'error'
+                            if (statusDisplay.textContent.includes("Processing") || statusDisplay.textContent.includes("Downloading") || statusDisplay.textContent.includes("Transcribing")) {
+                                updateStatus("Conversion finished.", "Completed");
+                            }
+                            return;
+                        }
+
+                        // The value is a Uint8Array, decode it to a string
+                        const chunk = decoder.decode(value, {stream: true});
+                        processSseChunk(chunk);
+
+                        push();
+                    }).catch(error => {
+                        console.error('Stream error:', error);
+                        startButton.disabled = false;
+                        startButton.textContent = '🚀 Start Conversion';
+                        errorMessageDisplay.textContent = 'An error occurred during conversion. Please check logs.';
+                        errorMessageDisplay.style.display = 'block';
+                        updateStatus("Conversion error.", "Error"); // Update status on stream error
+                    });
+                }
+                push();
+            });
+
+        });
+        
+        function processSseChunk(chunk) {
+            // An SSE stream can contain multiple messages
+            const messages = chunk.split('\n\n').filter(Boolean);
+            messages.forEach(message => {
+                const lines = message.split('\n');
+                const eventLine = lines.find(line => line.startsWith('event:'));
+                // Corrected line: 'line' should be used instead of 'dataLine' in the callback
+                const dataLine = lines.find(line => line.startsWith('data:')); 
+
+                if (!eventLine || !dataLine) return; // Skip if event or data line is missing
+                
+                const event = eventLine.substring(6).trim();
+                const data = JSON.parse(dataLine.substring(5).trim());
+
+                if (event === 'log') {
+                    addLog(data.message, data.level, data.timestamp);
+                } else if (event === 'status') {
+                    updateStatus(data.message, data.operation);
+                } else if (event === 'result') {
+                    displayOpenFolderButton();
+                    // On successful result, explicitly clear any error messages
+                    errorMessageDisplay.style.display = 'none';
+                    errorMessageDisplay.textContent = '';
+                    // Also set a clear success status
+                    updateStatus("Conversion complete. Output available.", "Completed");
+                } else if (event === 'progress') {
+                    updateProgressBar(data.percentage, data.message);
+                } else if (event === 'error_message') { // New event for specific errors
+                    errorMessageDisplay.textContent = data.message;
+                    errorMessageDisplay.style.display = 'block';
+                    updateStatus("Conversion error.", "Error"); // Also update main status on error
+                }
+            });
+        }
+
+
+        function addLog(message, level, timestamp) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.innerHTML = `<span class="timestamp">${timestamp}</span> ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(message, operation) {
+             const icons = {
+                "Processing": "⚙️", "Downloading": "⬇️",
+                "Transcribing": "🎹", "Completed": "✅", "Error": "❌",
+                "Ready": "📄" // Added "Ready" for initial state icon
+            };
+            const icon = icons[operation] || "📄";
+            statusDisplay.innerHTML = `${icon} ${operation}: ${message}`;
+        }
+        
+        function updateProgressBar(percentage, message) {
+            const clampedPercentage = Math.min(100, Math.max(0, percentage));
+            progressBar.style.width = `${clampedPercentage}%`;
+            progressText.textContent = `${Math.round(clampedPercentage)}% - ${message}`;
+        }
+
+        function displayOpenFolderButton() {
+            downloadLinksContainer.innerHTML = ''; // Clear previous links/content
+            const openFolderButton = document.createElement('button');
+            openFolderButton.className = 'primary full-width';
+            openFolderButton.textContent = '📂 Open Output Folder';
+            openFolderButton.addEventListener('click', () => {
+                fetch('/open_output_folder', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'error') {
+                            errorMessageDisplay.textContent = `Failed to open folder: ${data.message}`;
+                            errorMessageDisplay.style.display = 'block';
+                        } else {
+                            addLog('Output folder opened successfully.', 'info', new Date().toLocaleTimeString());
+                            errorMessageDisplay.style.display = 'none'; // Clear error on successful folder open
+                            errorMessageDisplay.textContent = '';
+                        }
+                    })
+                    .catch(error => {
+                        errorMessageDisplay.textContent = `Error sending request to open folder: ${error}`;
+                        errorMessageDisplay.style.display = 'block';
+                    });
+            });
+            downloadLinksContainer.appendChild(openFolderButton);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,18 +1,98 @@
-🎼 YouTube to MIDI ConverterA local, web-based tool built with Flask and Python that allows you to convert YouTube video audio or uploaded audio files into MIDI files. It leverages advanced piano transcription models to detect notes and create a MIDI representation of the music.✨ FeaturesYouTube URL Conversion: Directly paste YouTube URLs to download their audio and convert it to MIDI.Audio File Upload: Upload local audio files (MP3, WAV, FLAC) for MIDI conversion.Chunked Processing: Handles long audio files by processing them in manageable chunks to prevent memory issues.Customizable Transcription Parameters: Adjust onset_threshold, offset_threshold, and velocity_threshold for fine-tuning MIDI output.Audio Trimming: Specify start and end times to convert only a specific segment of the audio.Progress Tracking: Real-time progress bar and detailed logs in the web UI.Output Management: Option to zip multiple MIDI outputs and keep/delete downloaded MP3s.Open Output Folder: Convenient button in the UI to directly open the folder containing the generated MIDI files.Automatic Browser Launch: The web application automatically opens in your default browser upon startup.Responsive Web UI: A modern, glass-morphism inspired interface that adapts to different screen sizes, with dark mode support.🚀 Getting StartedThese instructions will get you a copy of the project up and running on your local machine for development and testing purposes.PrerequisitesBefore you begin, ensure you have the following installed:Python 3.8+: Download from python.org.pip: Python's package installer (usually comes with Python).FFmpeg: A powerful multimedia framework.Windows: Download a build from ffmpeg.org/download.html (e.g., from gyan.dev) and add its bin directory to your system's PATH environment variable.macOS: brew install ffmpeg (if you have Homebrew).Linux: sudo apt-get install ffmpeg (Debian/Ubuntu) or equivalent for your distribution.InstallationClone the repository (or download the ZIP):git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-(Replace your-username/your-repo-name with your actual Git repository details.)Create a virtual environment (recommended):python -m venv venv
-Activate the virtual environment:Windows:.\venv\Scripts\activate
-macOS/Linux:source venv/bin/activate
-Install Python dependencies:pip install -r requirements.txt
-(If you don't have a requirements.txt yet, you can generate one after installing the required packages manually, or simply run the following command directly):pip install Flask ffmpeg-python piano-transcription-inference yt-dlp librosa torch pretty-midi Unidecode
-Important Note for PyTorch (torch):The piano-transcription-inference library depends on PyTorch. For optimal performance, especially if you have an NVIDIA GPU, install the CUDA-enabled version of PyTorch. Visit the PyTorch website and follow their instructions to get the correct pip install command for your system and CUDA version. If you don't have a compatible GPU, the CPU-only version will work.Example for CPU-only:pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-Example for CUDA 11.8:pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-🏃 UsageRun the Flask application:Ensure your virtual environment is activated, then run:python app.py
-You will see output in your terminal indicating the server is starting.Access the web UI:Your default web browser should automatically open to http://127.0.0.1:5000. If not, open your browser and navigate to that address manually.Convert Audio:YouTube URL: Paste one or more YouTube video URLs (one per line) into the "YouTube URLs" textarea.Upload Audio Files: Click "Click to upload or drag files here" or drag and drop your MP3, WAV, or FLAC files.Settings: Adjust parameters like Custom Name, Chunk Duration, Max Note Duration, Start/End Time, and Transcription Thresholds as needed.Start Conversion: Click the "🚀 Start Conversion" button.Monitor Progress:The "Overall Progress" bar and "Processing Log" will update in real-time.Access Output:Once conversion is complete, an "📂 Open Output Folder" button will appear. Click it to open the output directory containing your generated MIDI files.📁 Project Structureyour-repo-name/
-├── app.py                  # The main Flask application logic
-├── templates/              # Directory for HTML templates
-│   └── index.html          # The main web UI page
-├── output/                 # Generated MIDI files will be saved here
-├── uploads/                # Temporary storage for uploaded audio and cookie files
-└── README.md               # This file
-🐛 TroubleshootingSyntaxError: f-string expression part cannot include a backslash:This means you're likely running an older version of app.py or have a syntax error. Ensure your app.py is fully updated from the latest source.TemplateNotFound: index.html:The index.html file is not in the correct location. Make sure it's inside a folder named templates in the same directory as app.py.RuntimeError: Working outside of request context:This indicates that Flask's request object was accessed in a background thread without proper context. This has been addressed in the latest app.py by passing necessary data explicitly. Ensure you have the latest app.py.NameError: name 'chunk_audio' is not defined:This means the chunk_audio utility function is either missing or misplaced in your app.py. Ensure your app.py is fully updated.PianoTranscription.__init__() got an unexpected keyword argument 'onset_threshold':Your piano-transcription-inference library version does not support these parameters directly in the constructor. The latest app.py handles this by setting them as attributes after initialization. Update your app.py.yt-dlp download failures (e.g., "Download failed, YouTube-DLP returned no information."):Update yt-dlp: pip install --upgrade yt-dlpCheck Video: Verify the YouTube video is publicly accessible, not age-restricted, or region-locked.Cookie File: For age-restricted or private videos you have access to, upload a valid YouTube cookie file (cookies.txt) via the provided input."An error occurred during conversion. Please check logs." in UI, but console shows success:This usually means the UI's state was not fully reset or an earlier error message persisted. Ensure your index.html is updated to the latest version, which includes more robust UI state management.Program stalls or crashes during transcription:Memory (RAM/GPU): Large audio files or very long chunk durations can consume a lot of memory. Try reducing the Chunk Duration or Max Note Duration. If you have a GPU, ensure PyTorch is correctly installed with CUDA support. The app has a fallback to CPU for CUDA out-of-memory errors.FFmpeg: Ensure FFmpeg is correctly installed and its path is added to your system's environment variables.💡 Future ImprovementsMore Visual Progress: Implement more detailed progress indicators for individual download/transcription stages.Audio Pre-processing: Add options for basic audio cleaning (e.g., noise reduction) before transcription.Multiple Output Formats: Support exporting to other musical formats like MusicXML.MIDI Playback: Integrate a simple MIDI player into the UI for immediate preview.Configuration File: Allow users to save default settings in a configuration file.📄 LicenseThis project is licensed under the MIT License - see the LICENSE file for details.
+# Gene's Audio to MIDI Converter & YouTube Downloader
+
+A versatile, locally-hosted web application that provides AI-powered piano transcription to convert audio files into MIDI, and a full-featured YouTube downloader for saving video and audio content.
+
+![maybe screenshot here](.png) 
+
+---
+
+## Features
+
+This tool combines two major functionalities into a single, easy-to-use interface:
+
+### 🎹 **AI MIDI Converter**
+- **YouTube to MIDI:** Paste one or more YouTube URLs to directly convert them into MIDI files.
+- **Audio File to MIDI:** Upload your own audio files (`.mp3`, `.wav`, `.flac`, etc.) for transcription.
+- **Batch Processing:** Process multiple URLs and files in a single session.
+- **Advanced Trimming:** Specify start and end times to convert only a specific segment of an audio file.
+- **Custom Naming:** Assign a custom base name to your output files.
+- **GPU Acceleration:** Automatically uses a CUDA-enabled GPU if available for significantly faster transcription.
+
+### ⬇️ **YouTube Downloader**
+- **Download Video & Audio:** Save content from YouTube as either video (`.mp4`) or audio-only (`.mp3`/`.m4a`).
+- **Quality Selection:** Fetches all available quality options, allowing you to choose the perfect resolution or bitrate for your needs.
+- **Detailed Format Info:** See file extensions, resolution, framerate, and estimated file size before you download.
+- **Simple Interface:** Just paste a URL, fetch formats, and click download.
+
+---
+
+## Setup and Installation
+
+To run this application on your local machine, you will need **Python 3.8+** and **FFmpeg**.
+
+### Step 1: Install FFmpeg
+
+FFmpeg is a required backend tool for audio processing.
+
+-   **Windows:** Download a build from [ffmpeg.org](https://ffmpeg.org/download.html). Extract the files and add the `bin` folder to your system's PATH environment variable.
+-   **macOS (Homebrew):** `brew install ffmpeg`
+-   **Linux (apt):** `sudo apt update && sudo apt install ffmpeg`
+
+### Step 2: Set Up the Project
+
+1.  **Clone or Download:** Get the project files from this repository.
+2.  **Navigate to Folder:** Open a terminal or command prompt and navigate into the project's root directory.
+3.  **Run Setup Script (Windows):** If you are on Windows, simply double-click the `setup.bat` file. It will create the necessary folders and install all Python packages.
+4.  **Manual Installation (macOS/Linux):**
+    - Create the `templates` directory: `mkdir templates`
+    - Install the required Python packages:
+      ```bash
+      pip install -r requirements.txt
+      ```
+
+*Note on PyTorch: The `requirements.txt` file installs the CPU version of PyTorch. If you have a CUDA-enabled NVIDIA GPU, you can achieve a significant speedup by installing the GPU version. See the [official PyTorch website](https://pytorch.org/get-started/locally/) for the correct command for your system.*
+
+---
+
+## How to Run
+
+1.  Make sure you have completed the setup steps above.
+2.  Open a terminal in the project's root directory.
+3.  Run the Flask application:
+    ```bash
+    python app.py
+    ```
+4.  Open your web browser and navigate to: **http://127.0.0.1:5000**
+
+The application interface should now be visible and ready to use.
+
+---
+
+## How to Use
+
+The application is divided into two tabs:
+
+### MIDI Converter
+1.  Paste one or more YouTube URLs into the text area, or upload audio files from your computer.
+2.  Adjust the settings (trim times, custom name, etc.) as needed.
+3.  Click **"Start Conversion"**.
+4.  Progress will be displayed in the status and log sections.
+5.  When finished, download links for your MIDI files will appear.
+
+### YouTube Downloader
+1.  Paste a single YouTube URL into the input field.
+2.  Click **"Fetch Available Formats"**.
+3.  Wait for the quality options for both video and audio to appear.
+4.  Select your desired quality from the dropdown menus.
+5.  Click **"Download Video"** or **"Download Audio"**.
+6.  The file will be downloaded and a link will appear in the progress section.
+
+---
+
+## Technologies Used
+
+-   **Backend:** Python, Flask
+-   **Frontend:** HTML5, CSS3, JavaScript
+-   **AI Transcription:** `piano-transcription-inference` (PyTorch)
+-   **YouTube Interaction:** `yt-dlp`
+-   **Audio Processing:** `librosa`, `ffmpeg-python`

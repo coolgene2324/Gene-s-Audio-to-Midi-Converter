@@ -18,7 +18,7 @@ This tool combines two major functionalities into a single, easy-to-use interfac
 - **Custom Naming:** Assign a custom base name to your output files.
 - **GPU Acceleration:** Automatically uses a CUDA-enabled GPU if available for significantly faster transcription.
 
-### ⬇️ **YouTube Downloader**
+### ⬇️ **YouTube Downloader (IN DEVELOPMENT)**
 - **Download Video & Audio:** Save content from YouTube as either video (`.mp4`) or audio-only (`.mp3`/`.m4a`).
 - **Quality Selection:** Fetches all available quality options, allowing you to choose the perfect resolution or bitrate for your needs.
 - **Detailed Format Info:** See file extensions, resolution, framerate, and estimated file size before you download.
@@ -79,7 +79,7 @@ The application is divided into two tabs:
 4.  Progress will be displayed in the status and log sections.
 5.  When finished, download links for your MIDI files will appear.
 
-### YouTube Downloader
+### YouTube Downloader (notryet implemented)
 1.  Paste a single YouTube URL into the input field.
 2.  Click **"Fetch Available Formats"**.
 3.  Wait for the quality options for both video and audio to appear.
